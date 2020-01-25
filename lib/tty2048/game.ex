@@ -32,7 +32,8 @@ defmodule Tty2048.Game do
     highest_value = game.grid |> List.flatten() |> Enum.max()
 
     cond do
-      highest_value >= 2048 -> GenEvent.notify(manager, {:game_won, game})
+      # highest_value >= 2048 -> GenEvent.notify(manager, {:game_won, game})
+      highest_value >= 16 -> GenEvent.notify(manager, {:game_won, game})
       can_move? == true -> GenEvent.notify(manager, {:moved, game})
       can_move? == false -> GenEvent.notify(manager, {:game_over, game})
     end
