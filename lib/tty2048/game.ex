@@ -6,12 +6,12 @@ defmodule Tty2048.Game do
   alias Tty2048.Grid
 
   def start_link(from) do
-    GenServer.start_link(__MODULE__, from, [name: __MODULE__])
+    GenServer.start_link(__MODULE__, from, name: __MODULE__)
   end
 
   def init(from) do
-    :random.seed(:os.timestamp)
-    {:ok, manager} = GenEvent.start_link
+    :random.seed(:os.timestamp())
+    {:ok, manager} = GenEvent.start_link()
     {:ok, {manager, new(from)}}
   end
 
@@ -28,14 +28,16 @@ defmodule Tty2048.Game do
   end
 
   def handle_cast({:move, side}, {manager, %__MODULE__{} = game}) do
-    case move(game, side) do
-      {true, game} ->
-        GenEvent.notify(manager, {:moved, game})
-        {:noreply, {manager, game}}
-      {false, game} ->
-        GenEvent.notify(manager, {:game_over, game})
-        {:noreply, {manager, game}}
+    {can_move?, game} = move(game, side)
+    highest_value = game.grid |> List.flatten() |> Enum.max()
+
+    cond do
+      highest_value >= 2048 -> GenEvent.notify(manager, {:game_won, game})
+      can_move? == true -> GenEvent.notify(manager, {:moved, game})
+      can_move? == false -> GenEvent.notify(manager, {:game_over, game})
     end
+
+    {:noreply, {manager, game}}
   end
 
   defp new(%__MODULE__{} = game), do: game
