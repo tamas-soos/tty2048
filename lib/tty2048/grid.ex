@@ -2,16 +2,15 @@ defmodule Tty2048.Grid do
   @sides [:up, :down, :right, :left]
 
   def new(size) when size > 0 do
-    make_grid(size)
-    |> seed |> seed
+    grid = make_grid(size)
+    seed(2, grid)
   end
 
   def move(grid, side)
-  when is_list(grid) and side in @sides do
+      when is_list(grid) and side in @sides do
     case try_move(grid, side) do
       :noop -> {grid, 0}
-      {:ok, grid, points} ->
-        {seed(grid), points}
+      {:ok, grid, points} -> {seed(grid), points}
     end
   end
 
@@ -21,7 +20,9 @@ defmodule Tty2048.Grid do
 
   defp try_move(grid, side) do
     case do_move(grid, side) do
-      {^grid, _} -> :noop
+      {^grid, _} ->
+        :noop
+
       {grid, points} ->
         {:ok, grid, points}
     end
@@ -59,9 +60,9 @@ defmodule Tty2048.Grid do
   end
 
   defp compose(chunks, fun) do
-    Enum.map_reduce chunks, 0, fn
+    Enum.map_reduce(chunks, 0, fn
       {acc, tail, points}, sum -> {fun.(acc, tail), sum + points}
-    end
+    end)
   end
 
   defp transpose({grid, points}),
@@ -73,9 +74,10 @@ defmodule Tty2048.Grid do
     do: Enum.reverse(acc)
 
   defp transpose(grid, acc) do
-    {tail, row} = Enum.map_reduce(grid, [], fn
-      [el | rest], row -> {rest, [el | row]}
-    end)
+    {tail, row} =
+      Enum.map_reduce(grid, [], fn
+        [el | rest], row -> {rest, [el | row]}
+      end)
 
     transpose(tail, [Enum.reverse(row) | acc])
   end
@@ -111,7 +113,7 @@ defmodule Tty2048.Grid do
   end
 
   defp seed(grid) do
-    seed(if(:random.uniform < 0.9, do: 2, else: 4), grid)
+    seed(1, grid)
   end
 
   defp seed(num, grid) do
@@ -134,11 +136,13 @@ defmodule Tty2048.Grid do
   end
 
   defp take_empties({row, row_index}, acc) do
-    Stream.with_index(row) |> Enum.reduce(acc, fn
+    Stream.with_index(row)
+    |> Enum.reduce(acc, fn
       {0, index}, {count, empties} ->
         {count + 1, [{row_index, index} | empties]}
 
-      _cell, acc -> acc
+      _cell, acc ->
+        acc
     end)
   end
 end
