@@ -5,41 +5,55 @@ defmodule Tty2048.Game do
 
   alias Tty2048.Grid
 
-  def start_link(from) do
-    GenServer.start_link(__MODULE__, from, name: __MODULE__)
-  end
-
-  def init(from) do
-    :random.seed(:os.timestamp())
-    {:ok, manager} = GenEvent.start_link()
-    {:ok, {manager, new(from)}}
-  end
+  # Client
 
   def peek() do
     GenServer.call(__MODULE__, :peek)
   end
 
   def move(side) do
-    GenServer.cast(__MODULE__, {:move, side})
+    GenServer.call(__MODULE__, {:move, side})
   end
 
-  def handle_call(:peek, _from, {_, %__MODULE__{}} = game) do
+  # FIXME dont default side to 6
+  def restart() do
+    GenServer.call(__MODULE__, :restart)
+  end
+
+  # Callbacks
+
+  def start_link(size) do
+    GenServer.start_link(__MODULE__, size, name: __MODULE__)
+  end
+
+  def init(size) do
+    :random.seed(:os.timestamp())
+    {:ok, new(size)}
+  end
+
+  def handle_call(:peek, _from, %__MODULE__{} = game) do
     {:reply, game, game}
   end
 
-  def handle_cast({:move, side}, {manager, %__MODULE__{} = game}) do
+  def handle_call({:move, side}, _from, %__MODULE__{} = game) do
     {can_move?, game} = move(game, side)
     highest_value = game.grid |> List.flatten() |> Enum.max()
 
     cond do
       # highest_value >= 2048 -> GenEvent.notify(manager, {:game_won, game})
-      highest_value >= 16 -> GenEvent.notify(manager, {:game_won, game})
-      can_move? == true -> GenEvent.notify(manager, {:moved, game})
-      can_move? == false -> GenEvent.notify(manager, {:game_over, game})
+      highest_value >= 32 -> {:reply, {:game_won, game}, game}
+      can_move? == true -> {:reply, {:moved, game}, game}
+      can_move? == false -> {:reply, {:game_over, game}, game}
     end
-
-    {:noreply, {manager, game}}
   end
+
+  def handle_call(:restart, _from, _game) do
+    # FIXME dont default side to 6
+    new_game = new(6)
+    {:reply, new_game, new_game}
+  end
+
+  # Helpers
 
   defp new(%__MODULE__{} = game), do: game
 
