@@ -5,7 +5,14 @@ defmodule Tty2048.Game do
 
   alias Tty2048.Grid
 
-  # Client
+  def start_link(size) do
+    GenServer.start_link(__MODULE__, size, name: __MODULE__)
+  end
+
+  def init(size) do
+    :random.seed(:os.timestamp())
+    {:ok, new(size)}
+  end
 
   def peek() do
     GenServer.call(__MODULE__, :peek)
@@ -18,17 +25,6 @@ defmodule Tty2048.Game do
   # FIXME dont default side to 6
   def restart() do
     GenServer.call(__MODULE__, :restart)
-  end
-
-  # Callbacks
-
-  def start_link(size) do
-    GenServer.start_link(__MODULE__, size, name: __MODULE__)
-  end
-
-  def init(size) do
-    :random.seed(:os.timestamp())
-    {:ok, new(size)}
   end
 
   def handle_call(:peek, _from, %__MODULE__{} = game) do
@@ -52,8 +48,6 @@ defmodule Tty2048.Game do
     new_game = new(6)
     {:reply, new_game, new_game}
   end
-
-  # Helpers
 
   defp new(%__MODULE__{} = game), do: game
 
