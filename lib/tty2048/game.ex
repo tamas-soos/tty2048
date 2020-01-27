@@ -1,18 +1,19 @@
 defmodule Tty2048.Game do
-  # FIXME add back struct
   defstruct [:grid, score: 0]
 
   use GenServer
-
   alias Tty2048.Grid
 
-  def start_link(size) do
-    GenServer.start_link(__MODULE__, size, name: __MODULE__)
+  @win_tile 2048
+  @grid_size 6
+
+  def start_link(_args) do
+    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
-  def init(size) do
+  def init(:ok) do
     :random.seed(:os.timestamp())
-    {:ok, new(size)}
+    {:ok, new(@grid_size)}
   end
 
   def peek() do
@@ -23,7 +24,6 @@ defmodule Tty2048.Game do
     GenServer.call(__MODULE__, {:move, side})
   end
 
-  # FIXME dont default side to 6
   def restart() do
     GenServer.call(__MODULE__, :restart)
   end
@@ -37,16 +37,14 @@ defmodule Tty2048.Game do
     highest_value = game.grid |> List.flatten() |> Enum.max()
 
     cond do
-      # highest_value >= 2048 -> GenEvent.notify(manager, {:game_won, game})
-      highest_value >= 32 -> reply({:game_won, game})
+      highest_value >= @win_tile -> reply({:game_won, game})
       can_move? == true -> reply({:running, game})
       can_move? == false -> reply({:game_over, game})
     end
   end
 
   def handle_call(:restart, _from, _game) do
-    # FIXME dont default side to 6
-    new_game = new(6)
+    new_game = new(@grid_size)
     {:reply, new_game, new_game}
   end
 
