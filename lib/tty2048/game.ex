@@ -6,13 +6,14 @@ defmodule Tty2048.Game do
 
   @win_tile 2048
   @grid_size 6
+  @random_seed if Mix.env() == :test, do: 0, else: :os.timestamp()
 
   def start_link(_args) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
   def init(:ok) do
-    :random.seed(:os.timestamp())
+    :random.seed(@random_seed)
     {:ok, new(@grid_size)}
   end
 
